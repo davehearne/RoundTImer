@@ -15,8 +15,12 @@
         <h2>Session Setup</h2>
         <div class="grid">
           <label>
-            Round Length
-            <input id="roundSeconds" type="number" min="10" value="300" />
+            Round Minutes
+            <input id="roundMinutes" type="number" min="0" value="5" />
+          </label>
+          <label>
+            Round Seconds
+            <input id="roundSecondsPart" type="number" min="0" max="59" value="0" />
           </label>
           <label>
             Rest Length
@@ -34,9 +38,12 @@
             <input id="countdownBeepsEnabled" type="checkbox" checked />
             Last 5-second warning beeps
           </label>
-          <label class="checkboxLabel">
-            <input id="lightModeEnabled" type="checkbox" />
-            Light mode
+          <label class="switchLabel" for="lightModeEnabled">
+            <span>Theme</span>
+            <span class="switchControl">
+              <input id="lightModeEnabled" type="checkbox" />
+              <span class="switchSlider" aria-hidden="true"></span>
+            </span>
           </label>
         </div>
       </section>
