@@ -42,35 +42,40 @@ body {
   font-family: Inter, system-ui, -apple-system, sans-serif;
   color: var(--text);
   background: radial-gradient(circle at top, var(--bg-top), var(--bg));
+  transition: background 180ms ease, color 180ms ease;
 }
 
 .app {
-  max-width: 780px;
+  max-width: 960px;
   margin: 0 auto;
-  padding: 2rem 1rem 3rem;
+  padding: 1rem 0.85rem 1.4rem;
 }
 
 h1 {
-  margin-bottom: 0.25rem;
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.2;
 }
 
 .subtitle {
-  margin-top: 0;
+  margin: 0.3rem 0 0;
+  font-size: 0.95rem;
   color: var(--muted);
 }
 
 .card {
   background: color-mix(in oklab, var(--card), black 4%);
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 1rem;
-  margin-top: 1rem;
+  border-radius: 12px;
+  padding: 0.85rem;
+  margin-top: 0.75rem;
+  transition: background-color 180ms ease, border-color 180ms ease;
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 0.8rem;
+  grid-template-columns: 1fr;
+  gap: 0.65rem;
 }
 
 label {
@@ -86,15 +91,18 @@ input {
   border: 1px solid var(--input-border);
   background: var(--input-bg);
   color: var(--text);
-  padding: 0.6rem;
+  min-height: 46px;
+  padding: 0.65rem 0.7rem;
+  font-size: 1rem;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
 }
 
 .checkboxLabel {
   flex-direction: row;
   align-items: center;
   gap: 0.55rem;
-  align-self: end;
-  min-height: 42px;
+  align-self: auto;
+  min-height: 46px;
 }
 
 .checkboxLabel input[type="checkbox"] {
@@ -108,15 +116,15 @@ input {
 }
 
 .phase {
-  margin: 0.2rem 0;
-  font-size: 1.2rem;
+  margin: 0.1rem 0 0.2rem;
+  font-size: 1rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--accent);
 }
 
 .time {
-  font-size: clamp(3rem, 12vw, 6rem);
+  font-size: clamp(2.9rem, 19vw, 5.2rem);
   line-height: 1;
   margin: 0.4rem 0;
   font-weight: 800;
@@ -128,22 +136,24 @@ input {
 }
 
 .controls {
-  margin-top: 1rem;
-  display: flex;
-  gap: 0.7rem;
-  justify-content: center;
-  flex-wrap: wrap;
+  margin-top: 0.85rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.55rem;
 }
 
 button {
   cursor: pointer;
   border: none;
   border-radius: 10px;
-  padding: 0.7rem 1rem;
+  min-height: 48px;
+  padding: 0.75rem 1rem;
   background: var(--button-bg);
   color: var(--text);
-  font-size: 0.95rem;
-  min-width: 88px;
+  font-size: 1rem;
+  width: 100%;
+  touch-action: manipulation;
+  transition: background-color 180ms ease, color 180ms ease;
 }
 
 button:hover {
@@ -151,8 +161,128 @@ button:hover {
 }
 
 .hint {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--muted);
+  margin-top: 0.8rem;
+}
+
+.switchLabel {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  min-height: 46px;
+}
+
+.switchControl {
+  position: relative;
+  width: 52px;
+  height: 30px;
+  display: inline-flex;
+}
+
+.switchControl input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.switchSlider {
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--input-border);
+  border: 1px solid var(--border);
+  transition: background-color 180ms ease, border-color 180ms ease;
+  position: relative;
+}
+
+.switchSlider::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--input-bg);
+  transition: transform 180ms ease, background-color 180ms ease;
+}
+
+.switchControl input:checked + .switchSlider {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.switchControl input:checked + .switchSlider::after {
+  transform: translateX(22px);
+}
+
+.switchControl input:focus-visible + .switchSlider {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (min-width: 600px) {
+  .app {
+    padding: 1.5rem 1rem 2.2rem;
+  }
+
+  h1 {
+    font-size: 1.85rem;
+  }
+
+  .card {
+    padding: 1rem;
+    margin-top: 1rem;
+  }
+
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+}
+
+@media (min-width: 900px) {
+  .app {
+    padding: 2rem 1rem 3rem;
+  }
+
+  .grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.8rem;
+  }
+
+  .controls {
+    display: flex;
+    gap: 0.7rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  button {
+    width: auto;
+    min-width: 110px;
+  }
+
+  .phase {
+    font-size: 1.2rem;
+  }
+
+  .time {
+    font-size: clamp(3rem, 12vw, 6rem);
+  }
+
+  .hint {
+    font-size: 0.85rem;
+  }
 }
 
 .timer:fullscreen {

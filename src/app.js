@@ -1,4 +1,5 @@
-const roundSecondsInput = document.getElementById("roundSeconds");
+const roundMinutesInput = document.getElementById("roundMinutes");
+const roundSecondsPartInput = document.getElementById("roundSecondsPart");
 const restSecondsInput = document.getElementById("restSeconds");
 const totalRoundsInput = document.getElementById("totalRounds");
 const warmupSecondsInput = document.getElementById("warmupSeconds");
@@ -28,10 +29,23 @@ function formatTime(totalSeconds) {
 }
 
 function clampSettings() {
-  roundSecondsInput.value = Math.max(10, Number(roundSecondsInput.value) || 300);
+  const roundMinutes = Math.max(0, Number(roundMinutesInput.value) || 0);
+  const roundSecondsPart = Math.min(59, Math.max(0, Number(roundSecondsPartInput.value) || 0));
+  const totalRoundSeconds = roundMinutes * 60 + roundSecondsPart;
+  if (totalRoundSeconds < 10) {
+    roundMinutesInput.value = 0;
+    roundSecondsPartInput.value = 10;
+  } else {
+    roundMinutesInput.value = roundMinutes;
+    roundSecondsPartInput.value = roundSecondsPart;
+  }
   restSecondsInput.value = Math.max(0, Number(restSecondsInput.value) || 60);
   totalRoundsInput.value = Math.max(1, Number(totalRoundsInput.value) || 6);
   warmupSecondsInput.value = Math.max(0, Number(warmupSecondsInput.value) || 10);
+}
+
+function getRoundDurationSeconds() {
+  return Number(roundMinutesInput.value) * 60 + Number(roundSecondsPartInput.value);
 }
 
 function beep(frequency = 660, duration = 140, type = "sine", gain = 0.08) {
@@ -111,7 +125,7 @@ function updateUI() {
 function loadReadyState() {
   clampSettings();
   currentRound = 1;
-  secondsLeft = Number(roundSecondsInput.value);
+  secondsLeft = getRoundDurationSeconds();
   phase = "ready";
   updateUI();
 }
@@ -123,7 +137,7 @@ function startFromReady() {
     secondsLeft = warmup;
   } else {
     phase = "round";
-    secondsLeft = Number(roundSecondsInput.value);
+    secondsLeft = getRoundDurationSeconds();
     roundStartSignal();
   }
   running = true;
@@ -148,7 +162,7 @@ function tick() {
 
   if (phase === "warmup") {
     phase = "round";
-    secondsLeft = Number(roundSecondsInput.value);
+    secondsLeft = getRoundDurationSeconds();
     roundStartSignal();
     updateUI();
     return;
@@ -173,7 +187,7 @@ function tick() {
     } else {
       currentRound += 1;
       phase = "round";
-      secondsLeft = Number(roundSecondsInput.value);
+      secondsLeft = getRoundDurationSeconds();
       roundStartSignal();
     }
     updateUI();
@@ -183,7 +197,7 @@ function tick() {
   if (phase === "rest") {
     currentRound += 1;
     phase = "round";
-    secondsLeft = Number(roundSecondsInput.value);
+    secondsLeft = getRoundDurationSeconds();
     roundStartSignal();
     updateUI();
   }
@@ -252,7 +266,7 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-[roundSecondsInput, restSecondsInput, totalRoundsInput, warmupSecondsInput, countdownBeepsEnabledInput].forEach((input) => {
+[roundMinutesInput, roundSecondsPartInput, restSecondsInput, totalRoundsInput, warmupSecondsInput, countdownBeepsEnabledInput].forEach((input) => {
   input.addEventListener("change", () => {
     if (!running && (phase === "ready" || phase === "end")) {
       loadReadyState();
