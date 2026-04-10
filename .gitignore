@@ -1,0 +1,25 @@
+# macOS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local env files
+.env
+.env.*
+
+# Python simple server cache
+__pycache__/
+
+# Build outputs (if framework tooling is added later)
+dist/
+build/
+coverage/
