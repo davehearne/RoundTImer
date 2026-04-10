@@ -1,0 +1,200 @@
+:root {
+  color-scheme: dark;
+  --bg: #0f1115;
+  --bg-top: #1c2330;
+  --card: #1b1f27;
+  --text: #eef3ff;
+  --muted: #9ea7ba;
+  --accent: #3ea6ff;
+  --danger: #ff6b6b;
+  --rest: #f8c555;
+  --border: #2c3442;
+  --input-border: #3a4559;
+  --input-bg: #11151f;
+  --button-bg: #283041;
+  --button-hover-bg: #36435c;
+}
+
+body[data-theme="light"] {
+  color-scheme: light;
+  --bg: #edf2f8;
+  --bg-top: #ffffff;
+  --card: #ffffff;
+  --text: #172033;
+  --muted: #53607a;
+  --accent: #0f7ddb;
+  --danger: #c53f3f;
+  --rest: #a67500;
+  --border: #d6deea;
+  --input-border: #c4cfde;
+  --input-bg: #ffffff;
+  --button-bg: #dfe7f3;
+  --button-hover-bg: #cfd9e8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  color: var(--text);
+  background: radial-gradient(circle at top, var(--bg-top), var(--bg));
+}
+
+.app {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+}
+
+h1 {
+  margin-bottom: 0.25rem;
+}
+
+.subtitle {
+  margin-top: 0;
+  color: var(--muted);
+}
+
+.card {
+  background: color-mix(in oklab, var(--card), black 4%);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.8rem;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+input {
+  border-radius: 10px;
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--text);
+  padding: 0.6rem;
+}
+
+.checkboxLabel {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.55rem;
+  align-self: end;
+  min-height: 42px;
+}
+
+.checkboxLabel input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+}
+
+.timer {
+  text-align: center;
+}
+
+.phase {
+  margin: 0.2rem 0;
+  font-size: 1.2rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.time {
+  font-size: clamp(3rem, 12vw, 6rem);
+  line-height: 1;
+  margin: 0.4rem 0;
+  font-weight: 800;
+}
+
+.round {
+  color: var(--muted);
+  margin: 0;
+}
+
+.controls {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.7rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 10px;
+  padding: 0.7rem 1rem;
+  background: var(--button-bg);
+  color: var(--text);
+  font-size: 0.95rem;
+  min-width: 88px;
+}
+
+button:hover {
+  background: var(--button-hover-bg);
+}
+
+.hint {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.timer:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  margin: 0;
+  border-radius: 0;
+  border: none;
+  display: grid;
+  align-content: center;
+  gap: 0.8rem;
+  padding: 2rem;
+  background: radial-gradient(circle at top, #1e2533, var(--bg));
+}
+
+.timer:fullscreen .time {
+  font-size: clamp(5rem, 20vw, 14rem);
+}
+
+.timer:fullscreen .phase {
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+}
+
+.timer:fullscreen .round {
+  font-size: clamp(1rem, 2.8vw, 1.6rem);
+}
+
+.timer:fullscreen .controls button {
+  font-size: clamp(1rem, 2.4vw, 1.4rem);
+  min-width: 130px;
+  padding: 0.95rem 1.25rem;
+}
+
+body.round .phase {
+  color: var(--accent);
+}
+
+body.rest .phase {
+  color: var(--rest);
+}
+
+body.end .phase {
+  color: var(--danger);
+}

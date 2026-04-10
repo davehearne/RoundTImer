@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Open BJJ Round Timer</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <h1>Round Timer</h1>
+      <p class="subtitle">Custom round timer</p>
+
+      <section class="config card">
+        <h2>Session Setup</h2>
+        <div class="grid">
+          <label>
+            Round Length
+            <input id="roundSeconds" type="number" min="10" value="300" />
+          </label>
+          <label>
+            Rest Length
+            <input id="restSeconds" type="number" min="0" value="60" />
+          </label>
+          <label>
+            Total Rounds
+            <input id="totalRounds" type="number" min="1" value="6" />
+          </label>
+          <label>
+            Warmup Countdown
+            <input id="warmupSeconds" type="number" min="0" value="10" />
+          </label>
+          <label class="checkboxLabel">
+            <input id="countdownBeepsEnabled" type="checkbox" checked />
+            Last 5-second warning beeps
+          </label>
+          <label class="checkboxLabel">
+            <input id="lightModeEnabled" type="checkbox" />
+            Light mode
+          </label>
+        </div>
+      </section>
+
+      <section class="timer card" id="timerCard">
+        <p class="phase" id="phaseLabel">Ready</p>
+        <p class="time" id="timeLabel">05:00</p>
+        <p class="round" id="roundLabel">Round 1 / 6</p>
+
+        <div class="controls">
+          <button id="startBtn">Start</button>
+          <button id="pauseBtn">Pause</button>
+          <button id="resetBtn">Reset</button>
+          <button id="fullscreenBtn">Fullscreen</button>
+        </div>
+        <p class="hint">Keyboard: Space = start/pause, R = reset, F = fullscreen</p>
+      </section>
+    </main>
+
+    <script src="./src/app.js"></script>
+  </body>
+</html>
