@@ -82,6 +82,21 @@ h1 {
   display: none;
 }
 
+.installBanner {
+  margin-top: 0.7rem;
+  width: 100%;
+  min-height: 42px;
+  border-radius: 10px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: white;
+  font-size: 0.95rem;
+}
+
+.installBanner.hidden {
+  display: none;
+}
+
 .settingsHeader {
   display: flex;
   align-items: center;

@@ -7,6 +7,9 @@ A free and open-source round timer for Brazilian Jiu-Jitsu training sessions.
 - Configurable round length, rest length, total rounds, and optional warmup countdown
 - Clear phase states: warmup, round, rest, and complete
 - Audio signals for transitions between phases
+- Ref Mode (IBJJF command audio)
+- Keep-awake option while timer is active (on supported mobile browsers)
+- Installable PWA with offline app-shell caching
 - Keyboard controls:
   - `Space` start/pause
   - `R` reset
@@ -23,6 +26,12 @@ python3 -m http.server 8080
 ```
 
 Then open <http://localhost:8080>.
+
+## Install as an app (PWA)
+
+- Open the deployed HTTPS site in a supported browser.
+- Use the in-app `Install app` button or browser install prompt.
+- Once installed, the timer runs in standalone mode and works offline for core assets.
 
 ## Open Source Notes
 
