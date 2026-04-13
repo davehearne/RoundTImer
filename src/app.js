@@ -98,9 +98,6 @@ function finalSignal() {
 }
 
 function countdownWarningSignal() {
-  if (refModeEnabledInput.checked) {
-    return;
-  }
   beep(1100, 70, "square", 0.05);
 }
 
