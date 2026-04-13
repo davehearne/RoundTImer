@@ -1,5 +1,10 @@
 # Open BJJ Round Timer
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
+[![PWA Ready](https://img.shields.io/badge/PWA-ready-5A0FC8)](./manifest.webmanifest)
+[![Mobile First](https://img.shields.io/badge/Mobile-first-0EA5E9)](https://github.com/davehearne/RoundTImer)
+[![Open Source](https://img.shields.io/badge/Open%20Source-Yes-brightgreen)](https://github.com/davehearne/RoundTImer)
+
 A free and open-source round timer for Brazilian Jiu-Jitsu training sessions.
 
 ## Features
