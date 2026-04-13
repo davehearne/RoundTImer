@@ -223,7 +223,7 @@ function syncWakeLock() {
 function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch(() => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {
       // Service worker registration is optional in unsupported contexts.
     });
   });

@@ -1,15 +1,15 @@
 const CACHE_VERSION = "bjj-timer-v1";
 const APP_SHELL_CACHE = [
-  "/",
-  "/index.html",
-  "/src/styles.css",
-  "/src/app.js",
-  "/manifest.webmanifest",
-  "/assets/icons/icon-192.png",
-  "/assets/icons/icon-512.png",
-  "/assets/icons/icon-maskable-512.png",
-  "/assets/sound-files/combate.mp3",
-  "/assets/sound-files/parro.mp3"
+  "./",
+  "./index.html",
+  "./src/styles.css",
+  "./src/app.js",
+  "./manifest.webmanifest",
+  "./assets/icons/icon-192.png",
+  "./assets/icons/icon-512.png",
+  "./assets/icons/icon-maskable-512.png",
+  "./assets/sound-files/combate.mp3",
+  "./assets/sound-files/parro.mp3"
 ];
 
 self.addEventListener("install", (event) => {
@@ -41,7 +41,7 @@ self.addEventListener("fetch", (event) => {
           caches.open(CACHE_VERSION).then((cache) => cache.put(event.request, cloned));
           return response;
         })
-        .catch(() => caches.match("/index.html"));
+        .catch(() => caches.match("./index.html"));
     })
   );
 });
