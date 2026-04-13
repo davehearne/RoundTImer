@@ -4,6 +4,7 @@ const restSecondsInput = document.getElementById("restSeconds");
 const totalRoundsInput = document.getElementById("totalRounds");
 const warmupSecondsInput = document.getElementById("warmupSeconds");
 const countdownBeepsEnabledInput = document.getElementById("countdownBeepsEnabled");
+const refModeEnabledInput = document.getElementById("refModeEnabled");
 const lightModeEnabledInput = document.getElementById("lightModeEnabled");
 
 const phaseLabel = document.getElementById("phaseLabel");
@@ -21,6 +22,8 @@ let running = false;
 let phase = "ready";
 let currentRound = 1;
 let secondsLeft = 300;
+const combateAudio = new Audio("./assets/sound-files/combate.mp3");
+const parroAudio = new Audio("./assets/sound-files/parro.mp3");
 
 function formatTime(totalSeconds) {
   const m = Math.floor(totalSeconds / 60);
@@ -69,15 +72,26 @@ function beep(frequency = 660, duration = 140, type = "sine", gain = 0.08) {
 }
 
 function roundStartSignal() {
+  if (refModeEnabledInput.checked) {
+    playAudio(combateAudio);
+    return;
+  }
   beep(760, 130);
   setTimeout(() => beep(920, 130), 170);
 }
 
 function restStartSignal() {
+  if (refModeEnabledInput.checked) {
+    return;
+  }
   beep(460, 180, "triangle");
 }
 
 function finalSignal() {
+  if (refModeEnabledInput.checked) {
+    playAudio(parroAudio);
+    return;
+  }
   beep(840, 120);
   setTimeout(() => beep(840, 120), 150);
   setTimeout(() => beep(840, 200), 320);
@@ -85,6 +99,13 @@ function finalSignal() {
 
 function countdownWarningSignal() {
   beep(1100, 70, "square", 0.05);
+}
+
+function playAudio(audio) {
+  audio.currentTime = 0;
+  audio.play().catch(() => {
+    // Audio playback may require user interaction in some browsers.
+  });
 }
 
 function setPhaseClass(phaseName) {
@@ -98,6 +119,15 @@ function applyTheme(isLightMode) {
   const theme = isLightMode ? "light" : "dark";
   document.body.dataset.theme = theme;
   localStorage.setItem("bjj-timer-theme", theme);
+}
+
+function updateStartButtonLabel() {
+  if (running) {
+    startBtn.textContent = "Start";
+    return;
+  }
+  const isResumablePhase = phase === "warmup" || phase === "round" || phase === "rest";
+  startBtn.textContent = isResumablePhase ? "Resume" : "Start";
 }
 
 function updateUI() {
@@ -120,6 +150,7 @@ function updateUI() {
     phaseLabel.textContent = "Ready";
     setPhaseClass("");
   }
+  updateStartButtonLabel();
 }
 
 function loadReadyState() {
@@ -169,6 +200,9 @@ function tick() {
   }
 
   if (phase === "round") {
+    if (refModeEnabledInput.checked) {
+      playAudio(parroAudio);
+    }
     const totalRounds = Number(totalRoundsInput.value);
     if (currentRound >= totalRounds) {
       phase = "end";
@@ -206,16 +240,28 @@ function tick() {
 function startTimer() {
   if (running) return;
   if (phase === "end") loadReadyState();
-  if (phase === "ready") startFromReady();
+  const startedFromReady = phase === "ready";
+  if (startedFromReady) startFromReady();
+  const isResumablePhase = phase === "warmup" || phase === "round" || phase === "rest";
+  if (!startedFromReady && refModeEnabledInput.checked && isResumablePhase) {
+    playAudio(combateAudio);
+  }
   running = true;
   if (!timerId) timerId = setInterval(tick, 1000);
+  updateUI();
 }
 
 function pauseTimer() {
+  if (running && refModeEnabledInput.checked) {
+    playAudio(parroAudio);
+  }
   running = false;
 }
 
 function resetTimer() {
+  if ((running || phase !== "ready") && refModeEnabledInput.checked) {
+    playAudio(parroAudio);
+  }
   running = false;
   loadReadyState();
 }
@@ -266,7 +312,7 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-[roundMinutesInput, roundSecondsPartInput, restSecondsInput, totalRoundsInput, warmupSecondsInput, countdownBeepsEnabledInput].forEach((input) => {
+[roundMinutesInput, roundSecondsPartInput, restSecondsInput, totalRoundsInput, warmupSecondsInput, countdownBeepsEnabledInput, refModeEnabledInput].forEach((input) => {
   input.addEventListener("change", () => {
     if (!running && (phase === "ready" || phase === "end")) {
       loadReadyState();
