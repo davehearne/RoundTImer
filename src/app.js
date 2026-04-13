@@ -452,8 +452,8 @@ function tick() {
 
 async function startTimer() {
   const unlocked = await unlockAudioContext();
-  if (unlocked) {
-    primeRefAudio().catch(() => {
+  if (unlocked && refModeEnabledInput.checked) {
+    await primeRefAudio().catch(() => {
       // Priming is best effort.
     });
   }
