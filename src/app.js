@@ -16,6 +16,9 @@ const pauseBtn = document.getElementById("pauseBtn");
 const resetBtn = document.getElementById("resetBtn");
 const fullscreenBtn = document.getElementById("fullscreenBtn");
 const timerCard = document.getElementById("timerCard");
+const audioEnableBanner = document.getElementById("audioEnableBanner");
+const settingsCard = document.getElementById("settingsCard");
+const toggleSettingsBtn = document.getElementById("toggleSettingsBtn");
 
 let timerId = null;
 let running = false;
@@ -24,6 +27,10 @@ let currentRound = 1;
 let secondsLeft = 300;
 const combateAudio = new Audio("./assets/sound-files/combate.mp3");
 const parroAudio = new Audio("./assets/sound-files/parro.mp3");
+let sharedAudioContext = null;
+let audioUnlocked = false;
+let settingsCollapsed = false;
+let fallbackFullscreenActive = false;
 
 function formatTime(totalSeconds) {
   const m = Math.floor(totalSeconds / 60);
@@ -51,24 +58,72 @@ function getRoundDurationSeconds() {
   return Number(roundMinutesInput.value) * 60 + Number(roundSecondsPartInput.value);
 }
 
-function beep(frequency = 660, duration = 140, type = "sine", gain = 0.08) {
-  try {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = audioContext.createOscillator();
-    const amp = audioContext.createGain();
-    osc.type = type;
-    osc.frequency.value = frequency;
-    amp.gain.value = gain;
-    osc.connect(amp);
-    amp.connect(audioContext.destination);
-    osc.start();
-    setTimeout(() => {
-      osc.stop();
-      audioContext.close();
-    }, duration);
-  } catch {
-    // Audio may be blocked until user interaction.
+function getAudioContext() {
+  if (!sharedAudioContext) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return null;
+    sharedAudioContext = new AudioContextClass();
   }
+  return sharedAudioContext;
+}
+
+function unlockAudioContext() {
+  const audioContext = getAudioContext();
+  if (!audioContext) return;
+  if (audioContext.state === "running") {
+    audioUnlocked = true;
+    updateAudioBanner();
+    return;
+  }
+  if (audioContext.state === "suspended") {
+    audioContext.resume()
+      .then(() => {
+        audioUnlocked = audioContext.state === "running";
+        updateAudioBanner();
+      })
+      .catch(() => {
+        // Resume can fail outside a user gesture.
+      });
+  }
+}
+
+function registerAudioUnlockHandlers() {
+  const unlockOnce = () => {
+    unlockAudioContext();
+    if (audioUnlocked) {
+      document.removeEventListener("pointerdown", unlockOnce);
+      document.removeEventListener("keydown", unlockOnce);
+      document.removeEventListener("touchstart", unlockOnce);
+    }
+  };
+  document.addEventListener("pointerdown", unlockOnce, { passive: true });
+  document.addEventListener("keydown", unlockOnce);
+  document.addEventListener("touchstart", unlockOnce, { passive: true });
+}
+
+function updateAudioBanner() {
+  audioEnableBanner.classList.toggle("hidden", audioUnlocked);
+}
+
+function updateSettingsVisibility() {
+  settingsCard.classList.toggle("collapsed", settingsCollapsed);
+  toggleSettingsBtn.textContent = settingsCollapsed ? "Show Settings" : "Hide Settings";
+}
+
+function beep(frequency = 660, duration = 140, type = "sine", gain = 0.08) {
+  const audioContext = getAudioContext();
+  if (!audioContext || audioContext.state !== "running") return;
+
+  const osc = audioContext.createOscillator();
+  const amp = audioContext.createGain();
+  osc.type = type;
+  osc.frequency.value = frequency;
+  amp.gain.value = gain;
+  osc.connect(amp);
+  amp.connect(audioContext.destination);
+  const now = audioContext.currentTime;
+  osc.start(now);
+  osc.stop(now + duration / 1000);
 }
 
 function roundStartSignal() {
@@ -238,6 +293,7 @@ function tick() {
 }
 
 function startTimer() {
+  unlockAudioContext();
   if (running) return;
   if (phase === "end") loadReadyState();
   const startedFromReady = phase === "ready";
@@ -252,6 +308,7 @@ function startTimer() {
 }
 
 function pauseTimer() {
+  unlockAudioContext();
   if (running && refModeEnabledInput.checked) {
     playAudio(parroAudio);
   }
@@ -259,6 +316,7 @@ function pauseTimer() {
 }
 
 function resetTimer() {
+  unlockAudioContext();
   if ((running || phase !== "ready") && refModeEnabledInput.checked) {
     playAudio(parroAudio);
   }
@@ -267,20 +325,44 @@ function resetTimer() {
 }
 
 function updateFullscreenButtonText() {
-  fullscreenBtn.textContent = document.fullscreenElement ? "Exit Fullscreen" : "Fullscreen";
+  const isFullscreen = document.fullscreenElement || fallbackFullscreenActive;
+  fullscreenBtn.textContent = isFullscreen ? "Exit Fullscreen" : "Fullscreen";
+}
+
+function setFallbackFullscreen(enabled) {
+  fallbackFullscreenActive = enabled;
+  timerCard.classList.toggle("mobileFullscreen", enabled);
+  document.body.classList.toggle("mobileFullscreen", enabled);
 }
 
 async function toggleFullscreen() {
-  if (!document.fullscreenElement) {
-    await timerCard.requestFullscreen();
-  } else {
-    await document.exitFullscreen();
+  const canUseNativeFullscreen =
+    typeof timerCard.requestFullscreen === "function" && typeof document.exitFullscreen === "function";
+
+  if (canUseNativeFullscreen) {
+    if (!document.fullscreenElement) {
+      await timerCard.requestFullscreen();
+    } else {
+      await document.exitFullscreen();
+    }
+    return;
   }
+
+  setFallbackFullscreen(!fallbackFullscreenActive);
+  updateFullscreenButtonText();
 }
 
 startBtn.addEventListener("click", startTimer);
 pauseBtn.addEventListener("click", pauseTimer);
 resetBtn.addEventListener("click", resetTimer);
+audioEnableBanner.addEventListener("click", () => {
+  unlockAudioContext();
+});
+toggleSettingsBtn.addEventListener("click", () => {
+  settingsCollapsed = !settingsCollapsed;
+  localStorage.setItem("bjj-timer-settings-collapsed", settingsCollapsed ? "true" : "false");
+  updateSettingsVisibility();
+});
 fullscreenBtn.addEventListener("click", async () => {
   try {
     await toggleFullscreen();
@@ -324,6 +406,10 @@ document.addEventListener("keydown", (event) => {
 
 loadReadyState();
 updateFullscreenButtonText();
+registerAudioUnlockHandlers();
+updateAudioBanner();
+settingsCollapsed = localStorage.getItem("bjj-timer-settings-collapsed") === "true";
+updateSettingsVisibility();
 const savedTheme = localStorage.getItem("bjj-timer-theme");
 const useLightMode = savedTheme === "light";
 lightModeEnabledInput.checked = useLightMode;

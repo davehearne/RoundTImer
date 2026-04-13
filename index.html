@@ -10,10 +10,16 @@
     <main class="app">
       <h1>Round Timer</h1>
       <p class="subtitle">Custom round timer</p>
+      <button id="audioEnableBanner" class="audioBanner" type="button">
+        Tap to enable audio
+      </button>
 
-      <section class="config card">
-        <h2>Session Setup</h2>
-        <div class="grid">
+      <section class="config card" id="settingsCard">
+        <div class="settingsHeader">
+          <h2>Session Setup</h2>
+          <button id="toggleSettingsBtn" class="settingsToggleBtn" type="button">Hide Settings</button>
+        </div>
+        <div class="grid" id="settingsGrid">
           <label>
             Round Minutes
             <input id="roundMinutes" type="number" min="0" value="5" />

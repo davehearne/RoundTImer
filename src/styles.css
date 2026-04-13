@@ -45,6 +45,10 @@ body {
   transition: background 180ms ease, color 180ms ease;
 }
 
+body.mobileFullscreen {
+  overflow: hidden;
+}
+
 .app {
   max-width: 960px;
   margin: 0 auto;
@@ -61,6 +65,44 @@ h1 {
   margin: 0.3rem 0 0;
   font-size: 0.95rem;
   color: var(--muted);
+}
+
+.audioBanner {
+  margin-top: 0.7rem;
+  width: 100%;
+  min-height: 42px;
+  border-radius: 10px;
+  border: 1px solid var(--accent);
+  background: color-mix(in oklab, var(--accent), transparent 80%);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.audioBanner.hidden {
+  display: none;
+}
+
+.settingsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.settingsHeader h2 {
+  margin: 0;
+}
+
+.settingsToggleBtn {
+  width: auto;
+  min-height: 36px;
+  min-width: 128px;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+#settingsCard.collapsed #settingsGrid {
+  display: none;
 }
 
 .card {
@@ -299,22 +341,55 @@ button:hover {
   background: radial-gradient(circle at top, #1e2533, var(--bg));
 }
 
+.timer.mobileFullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  margin: 0;
+  border-radius: 0;
+  border: none;
+  display: grid;
+  align-content: center;
+  gap: 0.8rem;
+  padding: 2rem 1rem;
+  background: radial-gradient(circle at top, #1e2533, var(--bg));
+}
+
 .timer:fullscreen .time {
   font-size: clamp(5rem, 20vw, 14rem);
+}
+
+.timer.mobileFullscreen .time {
+  font-size: clamp(4.4rem, 24vw, 12rem);
 }
 
 .timer:fullscreen .phase {
   font-size: clamp(1.6rem, 4vw, 2.2rem);
 }
 
+.timer.mobileFullscreen .phase {
+  font-size: clamp(1.35rem, 6vw, 2rem);
+}
+
 .timer:fullscreen .round {
   font-size: clamp(1rem, 2.8vw, 1.6rem);
+}
+
+.timer.mobileFullscreen .round {
+  font-size: clamp(1rem, 4.4vw, 1.4rem);
 }
 
 .timer:fullscreen .controls button {
   font-size: clamp(1rem, 2.4vw, 1.4rem);
   min-width: 130px;
   padding: 0.95rem 1.25rem;
+}
+
+.timer.mobileFullscreen .controls button {
+  font-size: clamp(1rem, 4vw, 1.3rem);
 }
 
 body.round .phase {
