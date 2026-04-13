@@ -29,12 +29,17 @@ let currentRound = 1;
 let secondsLeft = 300;
 const combateAudio = new Audio("./assets/sound-files/combate.mp3");
 const parroAudio = new Audio("./assets/sound-files/parro.mp3");
+combateAudio.preload = "auto";
+parroAudio.preload = "auto";
 let sharedAudioContext = null;
 let audioUnlocked = false;
 let settingsCollapsed = false;
 let fallbackFullscreenActive = false;
 let wakeLockSentinel = null;
 let deferredInstallPrompt = null;
+let refAudioPrimed = false;
+const AUDIO_ENABLED_COOKIE = "bjj_audio_enabled";
+let audioPreviouslyEnabled = false;
 
 function formatTime(totalSeconds) {
   const m = Math.floor(totalSeconds / 60);
@@ -71,34 +76,71 @@ function getAudioContext() {
   return sharedAudioContext;
 }
 
-function unlockAudioContext() {
+async function primeRefAudio() {
+  if (refAudioPrimed) return;
+  const audios = [combateAudio, parroAudio];
+  await Promise.all(
+    audios.map(async (audio) => {
+      const previousMuted = audio.muted;
+      try {
+        audio.muted = true;
+        await audio.play();
+        audio.pause();
+        audio.currentTime = 0;
+      } catch {
+        // Priming can fail on stricter platforms; best effort.
+      } finally {
+        audio.muted = previousMuted;
+      }
+    })
+  );
+  refAudioPrimed = true;
+}
+
+async function unlockAudioContext() {
   const audioContext = getAudioContext();
-  if (!audioContext) return;
+  if (!audioContext) return false;
   if (audioContext.state === "running") {
     audioUnlocked = true;
+    setCookie(AUDIO_ENABLED_COOKIE, "true", 365);
+    audioPreviouslyEnabled = true;
     updateAudioBanner();
-    return;
+    return true;
   }
   if (audioContext.state === "suspended") {
-    audioContext.resume()
+    return audioContext.resume()
       .then(() => {
         audioUnlocked = audioContext.state === "running";
+        if (audioUnlocked) {
+          setCookie(AUDIO_ENABLED_COOKIE, "true", 365);
+          audioPreviouslyEnabled = true;
+        }
         updateAudioBanner();
+        return audioUnlocked;
       })
       .catch(() => {
         // Resume can fail outside a user gesture.
+        return false;
       });
   }
+  return false;
 }
 
 function registerAudioUnlockHandlers() {
   const unlockOnce = () => {
-    unlockAudioContext();
-    if (audioUnlocked) {
-      document.removeEventListener("pointerdown", unlockOnce);
-      document.removeEventListener("keydown", unlockOnce);
-      document.removeEventListener("touchstart", unlockOnce);
-    }
+    unlockAudioContext()
+      .then((unlocked) => {
+        if (!unlocked) return;
+        primeRefAudio().catch(() => {
+          // Best-effort priming.
+        });
+        document.removeEventListener("pointerdown", unlockOnce);
+        document.removeEventListener("keydown", unlockOnce);
+        document.removeEventListener("touchstart", unlockOnce);
+      })
+      .catch(() => {
+        // Best effort.
+      });
   };
   document.addEventListener("pointerdown", unlockOnce, { passive: true });
   document.addEventListener("keydown", unlockOnce);
@@ -106,7 +148,20 @@ function registerAudioUnlockHandlers() {
 }
 
 function updateAudioBanner() {
-  audioEnableBanner.classList.toggle("hidden", audioUnlocked);
+  audioEnableBanner.classList.toggle("hidden", audioUnlocked || audioPreviouslyEnabled);
+}
+
+function setCookie(name, value, days) {
+  const expires = new Date(Date.now() + days * 86400000).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+}
+
+function getCookie(name) {
+  const prefix = `${name}=`;
+  const parts = document.cookie.split(";").map((part) => part.trim());
+  const match = parts.find((part) => part.startsWith(prefix));
+  if (!match) return null;
+  return decodeURIComponent(match.slice(prefix.length));
 }
 
 function updateSettingsVisibility() {
@@ -201,7 +256,16 @@ function setupInstallPrompt() {
 
 function beep(frequency = 660, duration = 140, type = "sine", gain = 0.08) {
   const audioContext = getAudioContext();
-  if (!audioContext || audioContext.state !== "running") return;
+  if (!audioContext) return;
+  if (audioContext.state === "suspended") {
+    audioContext.resume().then(() => {
+      beep(frequency, duration, type, gain);
+    }).catch(() => {
+      // Resume may still be blocked without a gesture.
+    });
+    return;
+  }
+  if (audioContext.state !== "running") return;
 
   const osc = audioContext.createOscillator();
   const amp = audioContext.createGain();
@@ -216,7 +280,7 @@ function beep(frequency = 660, duration = 140, type = "sine", gain = 0.08) {
 }
 
 function roundStartSignal() {
-  if (refModeEnabledInput.checked) {
+  if (refModeEnabledInput.checked && canPlayRefSound()) {
     playAudio(combateAudio);
     return;
   }
@@ -232,7 +296,7 @@ function restStartSignal() {
 }
 
 function finalSignal() {
-  if (refModeEnabledInput.checked) {
+  if (refModeEnabledInput.checked && canPlayRefSound()) {
     playAudio(parroAudio);
     return;
   }
@@ -250,6 +314,10 @@ function playAudio(audio) {
   audio.play().catch(() => {
     // Audio playback may require user interaction in some browsers.
   });
+}
+
+function canPlayRefSound() {
+  return phase !== "rest" && secondsLeft > 5;
 }
 
 function setPhaseClass(phaseName) {
@@ -344,7 +412,7 @@ function tick() {
   }
 
   if (phase === "round") {
-    if (refModeEnabledInput.checked) {
+    if (refModeEnabledInput.checked && canPlayRefSound()) {
       playAudio(parroAudio);
     }
     const totalRounds = Number(totalRoundsInput.value);
@@ -382,14 +450,19 @@ function tick() {
   }
 }
 
-function startTimer() {
-  unlockAudioContext();
+async function startTimer() {
+  const unlocked = await unlockAudioContext();
+  if (unlocked) {
+    primeRefAudio().catch(() => {
+      // Priming is best effort.
+    });
+  }
   if (running) return;
   if (phase === "end") loadReadyState();
   const startedFromReady = phase === "ready";
   if (startedFromReady) startFromReady();
   const isResumablePhase = phase === "warmup" || phase === "round" || phase === "rest";
-  if (!startedFromReady && refModeEnabledInput.checked && isResumablePhase) {
+  if (!startedFromReady && refModeEnabledInput.checked && isResumablePhase && canPlayRefSound()) {
     playAudio(combateAudio);
   }
   running = true;
@@ -399,8 +472,10 @@ function startTimer() {
 }
 
 function pauseTimer() {
-  unlockAudioContext();
-  if (running && refModeEnabledInput.checked) {
+  unlockAudioContext().catch(() => {
+    // Best effort.
+  });
+  if (running && refModeEnabledInput.checked && canPlayRefSound()) {
     playAudio(parroAudio);
   }
   running = false;
@@ -408,8 +483,10 @@ function pauseTimer() {
 }
 
 function resetTimer() {
-  unlockAudioContext();
-  if ((running || phase !== "ready") && refModeEnabledInput.checked) {
+  unlockAudioContext().catch(() => {
+    // Best effort.
+  });
+  if ((running || phase !== "ready") && refModeEnabledInput.checked && canPlayRefSound()) {
     playAudio(parroAudio);
   }
   running = false;
@@ -449,7 +526,15 @@ startBtn.addEventListener("click", startTimer);
 pauseBtn.addEventListener("click", pauseTimer);
 resetBtn.addEventListener("click", resetTimer);
 audioEnableBanner.addEventListener("click", () => {
-  unlockAudioContext();
+  unlockAudioContext().then((unlocked) => {
+    if (unlocked) {
+      primeRefAudio().catch(() => {
+        // Best effort.
+      });
+    }
+  }).catch(() => {
+    // Best effort.
+  });
 });
 toggleSettingsBtn.addEventListener("click", () => {
   settingsCollapsed = !settingsCollapsed;
@@ -467,6 +552,11 @@ fullscreenBtn.addEventListener("click", async () => {
 });
 document.addEventListener("fullscreenchange", updateFullscreenButtonText);
 document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    unlockAudioContext().catch(() => {
+      // Best effort.
+    });
+  }
   syncWakeLock();
 });
 lightModeEnabledInput.addEventListener("change", () => {
@@ -504,6 +594,7 @@ document.addEventListener("keydown", (event) => {
 loadReadyState();
 updateFullscreenButtonText();
 registerAudioUnlockHandlers();
+audioPreviouslyEnabled = getCookie(AUDIO_ENABLED_COOKIE) === "true";
 updateAudioBanner();
 registerServiceWorker();
 setupInstallPrompt();
