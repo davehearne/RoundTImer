@@ -4,12 +4,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Open BJJ Round Timer</title>
+    <meta name="theme-color" content="#0f1115" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="BJJ Timer" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./assets/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="./assets/icons/icon-192.png" />
     <link rel="stylesheet" href="./src/styles.css" />
   </head>
   <body>
     <main class="app">
       <h1>Round Timer</h1>
       <p class="subtitle">Custom round timer</p>
+      <button id="installAppBtn" class="installBanner hidden" type="button">Install app</button>
       <button id="audioEnableBanner" class="audioBanner" type="button">
         Tap to enable audio
       </button>

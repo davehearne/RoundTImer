@@ -18,6 +18,7 @@ const resetBtn = document.getElementById("resetBtn");
 const fullscreenBtn = document.getElementById("fullscreenBtn");
 const timerCard = document.getElementById("timerCard");
 const audioEnableBanner = document.getElementById("audioEnableBanner");
+const installAppBtn = document.getElementById("installAppBtn");
 const settingsCard = document.getElementById("settingsCard");
 const toggleSettingsBtn = document.getElementById("toggleSettingsBtn");
 
@@ -33,6 +34,7 @@ let audioUnlocked = false;
 let settingsCollapsed = false;
 let fallbackFullscreenActive = false;
 let wakeLockSentinel = null;
+let deferredInstallPrompt = null;
 
 function formatTime(totalSeconds) {
   const m = Math.floor(totalSeconds / 60);
@@ -112,6 +114,11 @@ function updateSettingsVisibility() {
   toggleSettingsBtn.textContent = settingsCollapsed ? "Show Settings" : "Hide Settings";
 }
 
+function updateInstallButton() {
+  const canShowInstall = deferredInstallPrompt !== null;
+  installAppBtn.classList.toggle("hidden", !canShowInstall);
+}
+
 function supportsWakeLock() {
   return typeof navigator !== "undefined" && "wakeLock" in navigator && typeof navigator.wakeLock.request === "function";
 }
@@ -156,6 +163,40 @@ function syncWakeLock() {
       // Lock cleanup is best effort.
     });
   }
+}
+
+function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {
+      // Service worker registration is optional in unsupported contexts.
+    });
+  });
+}
+
+function setupInstallPrompt() {
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    updateInstallButton();
+  });
+
+  installAppBtn.addEventListener("click", async () => {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    try {
+      await deferredInstallPrompt.userChoice;
+    } catch {
+      // Ignore install prompt failures.
+    }
+    deferredInstallPrompt = null;
+    updateInstallButton();
+  });
+
+  window.addEventListener("appinstalled", () => {
+    deferredInstallPrompt = null;
+    updateInstallButton();
+  });
 }
 
 function beep(frequency = 660, duration = 140, type = "sine", gain = 0.08) {
@@ -464,6 +505,9 @@ loadReadyState();
 updateFullscreenButtonText();
 registerAudioUnlockHandlers();
 updateAudioBanner();
+registerServiceWorker();
+setupInstallPrompt();
+updateInstallButton();
 settingsCollapsed = localStorage.getItem("bjj-timer-settings-collapsed") === "true";
 updateSettingsVisibility();
 const savedTheme = localStorage.getItem("bjj-timer-theme");
