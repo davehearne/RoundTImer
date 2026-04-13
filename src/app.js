@@ -5,6 +5,7 @@ const totalRoundsInput = document.getElementById("totalRounds");
 const warmupSecondsInput = document.getElementById("warmupSeconds");
 const countdownBeepsEnabledInput = document.getElementById("countdownBeepsEnabled");
 const refModeEnabledInput = document.getElementById("refModeEnabled");
+const keepAwakeEnabledInput = document.getElementById("keepAwakeEnabled");
 const lightModeEnabledInput = document.getElementById("lightModeEnabled");
 
 const phaseLabel = document.getElementById("phaseLabel");
@@ -31,6 +32,7 @@ let sharedAudioContext = null;
 let audioUnlocked = false;
 let settingsCollapsed = false;
 let fallbackFullscreenActive = false;
+let wakeLockSentinel = null;
 
 function formatTime(totalSeconds) {
   const m = Math.floor(totalSeconds / 60);
@@ -108,6 +110,52 @@ function updateAudioBanner() {
 function updateSettingsVisibility() {
   settingsCard.classList.toggle("collapsed", settingsCollapsed);
   toggleSettingsBtn.textContent = settingsCollapsed ? "Show Settings" : "Hide Settings";
+}
+
+function supportsWakeLock() {
+  return typeof navigator !== "undefined" && "wakeLock" in navigator && typeof navigator.wakeLock.request === "function";
+}
+
+async function requestWakeLock() {
+  if (!supportsWakeLock()) return;
+  if (wakeLockSentinel) return;
+  if (!keepAwakeEnabledInput.checked || !running || document.visibilityState !== "visible") return;
+  try {
+    wakeLockSentinel = await navigator.wakeLock.request("screen");
+    wakeLockSentinel.addEventListener("release", () => {
+      wakeLockSentinel = null;
+      if (running && keepAwakeEnabledInput.checked && document.visibilityState === "visible") {
+        requestWakeLock().catch(() => {
+          // Re-acquire may fail based on device power policy.
+        });
+      }
+    });
+  } catch {
+    // Wake lock may fail due to browser/device power policy.
+  }
+}
+
+async function releaseWakeLock() {
+  if (!wakeLockSentinel) return;
+  try {
+    await wakeLockSentinel.release();
+  } catch {
+    // Ignore failures if lock is already released.
+  } finally {
+    wakeLockSentinel = null;
+  }
+}
+
+function syncWakeLock() {
+  if (running && keepAwakeEnabledInput.checked) {
+    requestWakeLock().catch(() => {
+      // Some browsers require repeated user gestures.
+    });
+  } else {
+    releaseWakeLock().catch(() => {
+      // Lock cleanup is best effort.
+    });
+  }
 }
 
 function beep(frequency = 660, duration = 140, type = "sine", gain = 0.08) {
@@ -263,6 +311,7 @@ function tick() {
       phase = "end";
       secondsLeft = 0;
       running = false;
+      syncWakeLock();
       finalSignal();
       updateUI();
       return;
@@ -304,6 +353,7 @@ function startTimer() {
   }
   running = true;
   if (!timerId) timerId = setInterval(tick, 1000);
+  syncWakeLock();
   updateUI();
 }
 
@@ -313,6 +363,7 @@ function pauseTimer() {
     playAudio(parroAudio);
   }
   running = false;
+  syncWakeLock();
 }
 
 function resetTimer() {
@@ -321,6 +372,7 @@ function resetTimer() {
     playAudio(parroAudio);
   }
   running = false;
+  syncWakeLock();
   loadReadyState();
 }
 
@@ -373,9 +425,13 @@ fullscreenBtn.addEventListener("click", async () => {
   }
 });
 document.addEventListener("fullscreenchange", updateFullscreenButtonText);
+document.addEventListener("visibilitychange", () => {
+  syncWakeLock();
+});
 lightModeEnabledInput.addEventListener("change", () => {
   applyTheme(lightModeEnabledInput.checked);
 });
+keepAwakeEnabledInput.addEventListener("change", syncWakeLock);
 
 document.addEventListener("keydown", (event) => {
   if (event.code === "Space") {
