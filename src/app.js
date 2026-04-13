@@ -121,6 +121,15 @@ function applyTheme(isLightMode) {
   localStorage.setItem("bjj-timer-theme", theme);
 }
 
+function updateStartButtonLabel() {
+  if (running) {
+    startBtn.textContent = "Start";
+    return;
+  }
+  const isResumablePhase = phase === "warmup" || phase === "round" || phase === "rest";
+  startBtn.textContent = isResumablePhase ? "Resume" : "Start";
+}
+
 function updateUI() {
   timeLabel.textContent = formatTime(secondsLeft);
   roundLabel.textContent = `Round ${currentRound} / ${Number(totalRoundsInput.value)}`;
@@ -141,6 +150,7 @@ function updateUI() {
     phaseLabel.textContent = "Ready";
     setPhaseClass("");
   }
+  updateStartButtonLabel();
 }
 
 function loadReadyState() {
@@ -230,9 +240,15 @@ function tick() {
 function startTimer() {
   if (running) return;
   if (phase === "end") loadReadyState();
-  if (phase === "ready") startFromReady();
+  const startedFromReady = phase === "ready";
+  if (startedFromReady) startFromReady();
+  const isResumablePhase = phase === "warmup" || phase === "round" || phase === "rest";
+  if (!startedFromReady && refModeEnabledInput.checked && isResumablePhase) {
+    playAudio(combateAudio);
+  }
   running = true;
   if (!timerId) timerId = setInterval(tick, 1000);
+  updateUI();
 }
 
 function pauseTimer() {
