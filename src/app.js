@@ -45,6 +45,7 @@ let refAudioPrimed = false;
 let beepEnginePrimed = false;
 const AUDIO_ENABLED_COOKIE = "bjj_audio_enabled";
 let audioPreviouslyEnabled = false;
+let skipNextRoundStartRefSound = false;
 
 function formatTime(totalSeconds) {
   const m = Math.floor(totalSeconds / 60);
@@ -305,6 +306,10 @@ function beep(frequency = 660, duration = 140, type = "sine", gain = 0.08) {
 }
 
 function roundStartSignal() {
+  if (skipNextRoundStartRefSound) {
+    skipNextRoundStartRefSound = false;
+    return;
+  }
   if (refModeEnabledInput.checked && canPlayRefSound()) {
     playAudio(combateAudio);
     return;
@@ -347,6 +352,22 @@ function playAudio(audio) {
 
 function canPlayRefSound() {
   return phase !== "rest" && secondsLeft > 5;
+}
+
+function playInitialRefStartFromGesture() {
+  try {
+    combateAudio.currentTime = 0;
+    const playAttempt = combateAudio.play();
+    skipNextRoundStartRefSound = true;
+    if (playAttempt && typeof playAttempt.catch === "function") {
+      playAttempt.catch(() => {
+        // If direct playback fails, allow normal fallback signal path.
+        skipNextRoundStartRefSound = false;
+      });
+    }
+  } catch {
+    skipNextRoundStartRefSound = false;
+  }
 }
 
 function setPhaseClass(phaseName) {
@@ -480,6 +501,15 @@ function tick() {
 }
 
 async function startTimer() {
+  const shouldPlayImmediateRefStart =
+    refModeEnabledInput.checked &&
+    phase === "ready" &&
+    Number(warmupSecondsInput.value) === 0 &&
+    canPlayRefSound();
+  if (shouldPlayImmediateRefStart) {
+    playInitialRefStartFromGesture();
+  }
+
   const unlocked = await unlockAudioContext();
   if (unlocked && refModeEnabledInput.checked) {
     await primeRefAudio().catch(() => {
