@@ -31,6 +31,10 @@ const combateAudio = new Audio("./assets/sound-files/combate.mp3");
 const parroAudio = new Audio("./assets/sound-files/parro.mp3");
 combateAudio.preload = "auto";
 parroAudio.preload = "auto";
+combateAudio.setAttribute("playsinline", "true");
+parroAudio.setAttribute("playsinline", "true");
+combateAudio.load();
+parroAudio.load();
 let sharedAudioContext = null;
 let audioUnlocked = false;
 let settingsCollapsed = false;
@@ -310,8 +314,12 @@ function countdownWarningSignal() {
 }
 
 function playAudio(audio) {
-  audio.currentTime = 0;
-  audio.play().catch(() => {
+  // Safari is more reliable when each command uses a fresh element instance.
+  const player = audio.cloneNode(true);
+  player.preload = "auto";
+  player.setAttribute("playsinline", "true");
+  player.currentTime = 0;
+  player.play().catch(() => {
     // Audio playback may require user interaction in some browsers.
   });
 }
