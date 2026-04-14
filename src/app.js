@@ -42,6 +42,7 @@ let fallbackFullscreenActive = false;
 let wakeLockSentinel = null;
 let deferredInstallPrompt = null;
 let refAudioPrimed = false;
+let beepEnginePrimed = false;
 const AUDIO_ENABLED_COOKIE = "bjj_audio_enabled";
 let audioPreviouslyEnabled = false;
 
@@ -106,6 +107,7 @@ async function unlockAudioContext() {
   if (!audioContext) return false;
   if (audioContext.state === "running") {
     audioUnlocked = true;
+    primeBeepEngine(audioContext);
     setCookie(AUDIO_ENABLED_COOKIE, "true", 365);
     audioPreviouslyEnabled = true;
     updateAudioBanner();
@@ -116,6 +118,7 @@ async function unlockAudioContext() {
       .then(() => {
         audioUnlocked = audioContext.state === "running";
         if (audioUnlocked) {
+          primeBeepEngine(audioContext);
           setCookie(AUDIO_ENABLED_COOKIE, "true", 365);
           audioPreviouslyEnabled = true;
         }
@@ -258,6 +261,23 @@ function setupInstallPrompt() {
   });
 }
 
+function primeBeepEngine(audioContext) {
+  if (beepEnginePrimed) return;
+  try {
+    const osc = audioContext.createOscillator();
+    const amp = audioContext.createGain();
+    amp.gain.value = 0;
+    osc.connect(amp);
+    amp.connect(audioContext.destination);
+    const now = audioContext.currentTime;
+    osc.start(now);
+    osc.stop(now + 0.01);
+    beepEnginePrimed = true;
+  } catch {
+    // Priming can fail on strict browser states.
+  }
+}
+
 function beep(frequency = 660, duration = 140, type = "sine", gain = 0.08) {
   const audioContext = getAudioContext();
   if (!audioContext) return;
@@ -270,6 +290,7 @@ function beep(frequency = 660, duration = 140, type = "sine", gain = 0.08) {
     return;
   }
   if (audioContext.state !== "running") return;
+  primeBeepEngine(audioContext);
 
   const osc = audioContext.createOscillator();
   const amp = audioContext.createGain();
