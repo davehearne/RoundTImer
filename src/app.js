@@ -310,7 +310,7 @@ function roundStartSignal() {
     skipNextRoundStartRefSound = false;
     return;
   }
-  if (refModeEnabledInput.checked && canPlayRefSound()) {
+  if (refModeEnabledInput.checked && canPlayRefStartSound()) {
     playAudio(combateAudio);
     return;
   }
@@ -326,7 +326,7 @@ function restStartSignal() {
 }
 
 function finalSignal() {
-  if (refModeEnabledInput.checked && canPlayRefSound()) {
+  if (refModeEnabledInput.checked && canPlayRefStopSound()) {
     playAudio(parroAudio);
     return;
   }
@@ -350,7 +350,11 @@ function playAudio(audio) {
   });
 }
 
-function canPlayRefSound() {
+function canPlayRefStartSound() {
+  return phase !== "rest";
+}
+
+function canPlayRefStopSound() {
   return phase !== "rest" && secondsLeft > 5;
 }
 
@@ -462,7 +466,7 @@ function tick() {
   }
 
   if (phase === "round") {
-    if (refModeEnabledInput.checked && canPlayRefSound()) {
+    if (refModeEnabledInput.checked && canPlayRefStopSound()) {
       playAudio(parroAudio);
     }
     const totalRounds = Number(totalRoundsInput.value);
@@ -505,7 +509,7 @@ async function startTimer() {
     refModeEnabledInput.checked &&
     phase === "ready" &&
     Number(warmupSecondsInput.value) === 0 &&
-    canPlayRefSound();
+    canPlayRefStartSound();
   if (shouldPlayImmediateRefStart) {
     playInitialRefStartFromGesture();
   }
@@ -521,7 +525,7 @@ async function startTimer() {
   const startedFromReady = phase === "ready";
   if (startedFromReady) startFromReady();
   const isResumablePhase = phase === "warmup" || phase === "round" || phase === "rest";
-  if (!startedFromReady && refModeEnabledInput.checked && isResumablePhase && canPlayRefSound()) {
+  if (!startedFromReady && refModeEnabledInput.checked && isResumablePhase && canPlayRefStartSound()) {
     playAudio(combateAudio);
   }
   running = true;
@@ -534,7 +538,7 @@ function pauseTimer() {
   unlockAudioContext().catch(() => {
     // Best effort.
   });
-  if (running && refModeEnabledInput.checked && canPlayRefSound()) {
+  if (running && refModeEnabledInput.checked && canPlayRefStopSound()) {
     playAudio(parroAudio);
   }
   running = false;
@@ -545,7 +549,7 @@ function resetTimer() {
   unlockAudioContext().catch(() => {
     // Best effort.
   });
-  if ((running || phase !== "ready") && refModeEnabledInput.checked && canPlayRefSound()) {
+  if ((running || phase !== "ready") && refModeEnabledInput.checked && canPlayRefStopSound()) {
     playAudio(parroAudio);
   }
   running = false;
